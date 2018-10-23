@@ -1,16 +1,20 @@
 doctype
 html
     head
-        title= title
+        title=  title
+        link(rel='stylesheet', href='stylesheet.css')
     body
-        h1= h1
-        form(method='POST' action='uploads' enctype='multipart/form-data')
-            div
-                lable(for='image-upload') Upload an image
-                input(type='file' id='image-upload' name='myImage' required)
-            div
-                button(type='submit') Upload Image
-        
-        section(id='images-container')
-            each val in images
-                img(src=val width=500)
+        h1= "KenzieGram"
+        div(id="error")
+        form(method='POST' action='/public/uploads' enctype='multipart/form-data')
+            fieldset
+                legend='Upload a Photo'
+                input(type='file' name='myPhoto' id='inputPhoto')
+                input(type='submit' id='submit')
+
+        div(id="wrapper")
+            div(id="newPhoto")
+            each photo in photos
+                img(src=`/uploads/${photo}` id=photo)
+
+        script(src="index.js")

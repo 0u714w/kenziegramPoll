@@ -1,60 +1,70 @@
-const express = require("express");
-const multer = require("multer");
-const fs = require("fs");
-
-const publicPath = "public/";
-const port = 3000;
+const express = require('express');
+const multer = require('multer');
+const fs = require('fs');
+const upload = multer({
+    dest: 'public/uploads/'
+})
+const port = process.env.PORT || 3000;
 const app = express();
-const uploadPath = './public/uploads';
-const upload = multer({ dest: uploadPath });
+const uploaded_files = [];
 
-app.use(express.static(publicPath));
-app.use(express.json())
-app.set('view engine', 'pug')
-let modifiedTime = 0;
+app.set('view engine', 'pug');
+app.set('views', './public/views')
+app.use(express.static('public'));
+app.use(express.static('./public/uploads/'));
+app.use(express.json());
 
-app.post('/public/uploads', upload.single('myPhoto'), (request, response, next) => {
-    fs.readdir(uploadPath, (err, items) => {
+const responseData = {
+    images: [],
+    timestamp: 0
+}
 
-        response.render('submission', { photo: request.file.filename })
-    })
+app.post('/update', function(req, res) {
+    res.statusCode = 200;
+    const path = './public/uploads';
 
-})
-
-app.post('/latest', (request, response) => {
-    let newArray = []
-
-    fs.readdir(uploadPath, (err, items) => {
-
-
-
-        let mostRecentTime = request.body.clientTime
-        items.forEach((value) => {
-            const fileModifiedTime = fs.statSync(`${uploadPath}/${value}`).mtimeMs
-            if (fileModifiedTime > request.body.clientTime) {
-
-                newArray.push([value, fileModifiedTime])
-                if (mostRecentTime < fileModifiedTime) { mostRecentTime = fileModifiedTime }
-
+    fs.readdir(path, function(err, items) {
+        responseData.images = [];
+        for (let pic in items) {
+            let filename = items[pic];
+            let modified = fs.statSync(path + "/" + filename).mtimeMs;
+            if (modified > req.body.after) {
+                responseData.images.push(filename);
+                if (modified > responseData.timestamp) {
+                    responseData.timestamp = modified
+                }
             }
-        })
+        }
+        res.send(responseData);
+    });
+});
 
-        response.status(201)
-        response.send({ images: newArray, timeStamp: mostRecentTime })
-    })
+app.get('/index', function(req, res) {
+    res.statusCode = 200;
+    const path = './public/uploads';
 
-})
-
-
-app.get("/", (req, res) => {
-    fs.readdir(uploadPath, (err, items) => {
+    fs.readdir(path, function(err, items) {
         items.splice(items.findIndex(item => item === '.DS_Store'), 1)
-        res.render('index', { title: 'Kenzie Gram', photos: items })
-    })
+        for (let pic in items) {
+            let filename = items[pic];
+            let modified = fs.statSync(path + "/" + filename).mtimeMs;
+        }
+        res.render('index', {
+            title: 'Kenziegram',
+            message: 'Kenziegram',
+            images: items,
+        });
+    });
+});
+
+app.post('/upload', upload.single('myFile'), function(req, res, next) {
+    uploaded_files.push(req.file.filename);
+    res.render('upload', {
+        title: 'Kenziegram',
+        message: 'Kenziegram',
+        image: req.file.filename
+    });
 })
-
-
-
 
 
 app.listen(port, function() { console.log("I am working") });
